@@ -5,6 +5,13 @@ app_description = "a custom Frappe app for department budget tracking & expense 
 app_email = "voicepython01@gmail.com"
 app_license = "mit"
 
+
+#Fixtures
+fixtures = [
+    "Role Permission Manager",
+    {"doctype":"Role", "filters":["name","in",["SG Finance Manager","SG Staff", "SG Department Head"]]},
+]
+
 # Apps
 # ------------------
 
@@ -132,9 +139,9 @@ app_license = "mit"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
+permission_query_conditions = {
+	"Event": "spendgate.permissions.get_permission_query_conditions",
+}
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",

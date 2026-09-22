@@ -38,3 +38,28 @@ This app can use GitHub Actions for CI. The following workflows are configured:
 ### License
 
 mit
+
+# B2d — The Race Condition Question
+## In README_internals.md: two employees submit Expense Claims against the same Budget within the same second. Both controllers compute spent_so_far before either transaction commits. Could both submissions succeed even though, combined, they exceed the budget? Explain why or why not, and name the Frappe/MariaDB mechanism (if any) that protects against it. (One paragraph — this is a real question, not a trick; it's fine if your honest answer is "nothing currently protects against this.")
+
+### `Answer`: 
+
+# B2c — Dangerous Patterns
+## The snippet below has two bugs. One is generic (you've seen its shape before). The other is specific to this app and explains exactly why SpendGate computes spend with a live aggregate query instead of a running balance field. Identify both and write the corrected version in README_internals.md
+`def validate(self):
+    self.total_amount = sum(r.amount for r in self.expense_lines)
+    self.save()
+    budget = frappe.get_doc("Budget", self.budget)
+    budget.total_allocated -= self.total_amount
+    budget.save()
+
+### `ANSWER`: 
+
+# C3
+## In README_internals.md: rename a test Department record. Does department on linked Budgets and Expense Claims update automatically? Why or why not?
+### `ANSWER`:
+
+# D2
+## In README_internals.md: why is `frappe.get_all` dangerous in a whitelisted method exposed to low-privilege users?
+### `ANSWER`: frappe.get_all bypass all role permission, exposing data to all users including low-privilege users.
+
