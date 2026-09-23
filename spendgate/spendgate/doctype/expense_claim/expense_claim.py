@@ -34,12 +34,33 @@ class ExpenseClaim(Document):
 		
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
-			
 
+		frappe.enqueue("spendgate.notifications.notify_finance_of_new_claim")
+
+	def on_cancel(self):
+		if self.status == "Reimbursed":
+			frappe.throw("Cannot Cancel - money has already left the building, and a cancel here would silently corrupt the books.")
+		
+		self.status = "Cancelled"
+			
 	def on_trash(self):
 		if self.status not in ["Cancelled","Draft"]:
-			frappe.throw("Cannot delete Expense claim")
+			frappe.throw("Cannot delete Expense claim not in Cancelled or Draft.")
+
+	def on_update(self):
+		self.save()
 		
 
-		
+def reassign_department_claims(from_dept, to_dept):
+	values = {"from_department":from_dept, "to_department":to_dept}
+	try:
+		data = frappe.db.sql("""
+		UPDATE `tabExpense Claim` EC set EC.department = %(to_departmnt)s
+		WHERE EC.department = %(from_department)s and EC.status = "Draft"
+		""",values=values, as_dict=0)
 
+		frappe.db.commit()
+
+	except Exception as e:
+		frappe.db.rollback()
+		frappe.log_error(e)
