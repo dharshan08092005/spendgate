@@ -8,7 +8,7 @@ app_license = "mit"
 
 #Fixtures
 fixtures = [
-    "Role Permission Manager",
+    {"doctype":"Department"},
     {"doctype":"Role", "filters":["name","in",["SG Finance Manager","SG Staff", "SG Department Head"]]},
 ]
 
@@ -140,7 +140,7 @@ fixtures = [
 # Permissions evaluated in scripted ways
 
 permission_query_conditions = {
-	"Event": "spendgate.permissions.get_permission_query_conditions",
+	"Expense Claim": "spendgate.permissions.get_permission_query_conditions",
 }
 #
 # has_permission = {
