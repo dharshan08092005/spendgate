@@ -2,6 +2,7 @@
  "actions": [],
  "allow_bulk_edit": 1,
  "allow_rename": 1,
+ "autoname": "EXP-.YYYY.-.#####",
  "creation": "2026-09-22 15:55:14.237359",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -63,7 +64,7 @@
   },
   {
    "fieldname": "expense_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Expense Date",
    "reqd": 1
@@ -121,10 +122,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-22 16:16:57.942932",
+ "modified": "2026-09-24 16:00:30.630575",
  "modified_by": "Administrator",
  "module": "spendgate",
  "name": "Expense Claim",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

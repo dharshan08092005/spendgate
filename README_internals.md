@@ -47,7 +47,7 @@ def validate(self):
 # E1 — Complete Lifecycle
 ## Call self.save() inside on_update and observe what breaks. Explain it and correct the pattern in README_internals.md
 
-### `ANSWER`: 
+### `ANSWER`: When we call self.save() inside on_update(), the save triggers on_update() and become a loop causing stack overflow or loop condition.
 
 ---
 
@@ -86,3 +86,15 @@ def validate(self):
 #### WHERE EC.status = "Pending Approval" and EC.department = {department}"""
 
 ---
+
+# J1 — Expense Claim Voucher
+## In README_internals.md: explain the difference between putting a frappe.get_all() call directly inside the Jinja template versus pre-computing in before_print() and referencing doc.precomputed_field.
+
+### `ANSWER`:
+
+---
+
+# N1 — ignore_permissions Audit & JS-Hiding Pitfall
+## Explain in README_internals.md why hiding a field in JavaScript is not a security measure.
+
+### `ANSWER`:

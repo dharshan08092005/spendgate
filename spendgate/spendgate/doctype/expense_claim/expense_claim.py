@@ -3,11 +3,13 @@
 
 import frappe
 from frappe.model.document import Document
-
+from frappe.utils import today
 
 class ExpenseClaim(Document):
 
 	def validate(self):
+		if not self.expense_date:
+			self.expense_date = today()
 
 		if self.department != frappe.db.get_value("Budget", self.Budget, "department"):
 			frappe.throw("Department does not match with Budget")
@@ -24,7 +26,9 @@ class ExpenseClaim(Document):
 			WHERE budget = %s AND docstatus = 1 AND name != %s
 		""",(self.budget, self.name or ""))[0][0]
 
-		self.budget = frappe.db.get_value("Budget",filters={"name":self.budget},fields=["total_allocated"], as_dict=True)
+		self.budget = frappe.db.get_value("Budget",filters={"name":self.budget},fields=[
+			'total_allocated'
+		], as_dict=True)
 
 		if self.spent_so_far + self.total_amount > self.budget.total_allocated:
 			frappe.throw(f"{self.department} budget exceeded as {self.spent_so_far + self.total_amount} out of {self.budget.total_allocated}")
@@ -35,7 +39,8 @@ class ExpenseClaim(Document):
 		if not self.approved_by:
 			self.approved_by = frappe.session.user
 
-		frappe.enqueue("spendgate.notifications.notify_finance_of_new_claim")
+		frappe.enqueue("spendgate.notifications.notify_finance_of_new_claim",doc_name = self.name)
+		frappe.enqueue()
 
 	def on_cancel(self):
 		if self.status == "Reimbursed":
@@ -44,12 +49,19 @@ class ExpenseClaim(Document):
 		self.status = "Cancelled"
 			
 	def on_trash(self):
-		if self.status not in ["Cancelled","Draft"]:
+		if self.status not in [
+			'Cancelled',
+			'Draft'
+		]:
 			frappe.throw("Cannot delete Expense claim not in Cancelled or Draft.")
 
-	def on_update(self):
-		self.save()
-		
+	# def on_update(self):
+	# 	self.save()
+	def before_print(self):
+		self.print_summary = f"{self.employee} - {self.department} - {self.expense_date}"
+
+
+
 
 def reassign_department_claims(from_dept, to_dept):
 	values = {"from_department":from_dept, "to_department":to_dept}
@@ -64,3 +76,16 @@ def reassign_department_claims(from_dept, to_dept):
 	except Exception as e:
 		frappe.db.rollback()
 		frappe.log_error(e)
+
+def send_webhook(claim_name):
+    import requests
+    settings = frappe.get_single("SpendGate Settings")
+    if not settings.finance_webhook_url:
+        return
+    doc = frappe.get_doc("Expense Claim", claim_name)
+    payload = {"event": "claim_submitted", "claim": doc.name, "amount": doc.total_amount}
+    try:
+        r = requests.post(settings.finance_webhook_url, json=payload, timeout=5)
+        r.raise_for_status()
+    except Exception as e:
+        frappe.log_error(f"Webhook failed: {e}", "Webhook Error")

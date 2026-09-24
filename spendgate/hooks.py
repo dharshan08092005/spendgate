@@ -106,7 +106,7 @@ fixtures = [
 # ------------
 
 # before_install = "spendgate.install.before_install"
-# after_install = "spendgate.install.after_install"
+after_install = "spendgate.install.after_install"
 
 # Uninstallation
 # ------------
@@ -175,13 +175,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"spendgate.tasks.all"
 # 	],
-# 	"daily": [
-# 		"spendgate.tasks.daily"
-# 	],
+	"daily": [
+		"spendgate.tasks.check_budget_thresholds"
+	],
 # 	"hourly": [
 # 		"spendgate.tasks.hourly"
 # 	],
@@ -191,7 +191,7 @@ doc_events = {
 # 	"monthly": [
 # 		"spendgate.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------

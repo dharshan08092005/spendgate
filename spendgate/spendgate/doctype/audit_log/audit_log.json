@@ -27,7 +27,7 @@
   },
   {
    "fieldname": "action",
-   "fieldtype": "Select",
+   "fieldtype": "Data",
    "label": "Action",
    "options": "Save\nSubmit\nCancel"
   },
@@ -46,7 +46,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-23 14:00:03.407346",
+ "modified": "2026-09-24 10:35:31.718366",
  "modified_by": "Administrator",
  "module": "spendgate",
  "name": "Audit Log",

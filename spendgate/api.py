@@ -1,5 +1,7 @@
 import frappe
 from frappe.query_builder import DocType
+from frappe.utils import today
+from frappe.utils import datetime
 
 @frappe.whitelist()
 def get_claims_pending_approval():
@@ -17,39 +19,25 @@ def get_claims_pending_approval():
 def share_expense_claim(claim_name, user_email):
     frappe.share.add("Expense Claim", claim_name, user_email, read = 1)
 
-# "Don't leak data" task: write a whitelisted method returning Expense Claim data in two versions — the unsafe one that returns every field (including line-item detail) to any caller, and the safe one that uses frappe.get_list (permission-aware, not frappe.get_all) and strips line-item amounts for callers outside the claimant's department
-
 @frappe.whitelist(allow_guest = True)
 def expose_expense_claim():
-    doc = frappe.get_all("Expense Claim")
+    doc = frappe.get_all("Expense Claim", ignore_permissions=True)
     return doc
 
 @frappe.whitelist()
-#yaru claim panrangalo avanga dept thavara iruka dept lam amount not show
 def expose_safe_expense_claim():
-    docs = frappe.get_list("Expense Claim", fileds=[
-      'name, department'
-    ])
-
+    docs = frappe.get_list("Expense Claim", fields=['*'], ignore_permissions=True)
+    
     user = frappe.session.user
     roles = frappe.get_roles(user)
     user_dept = frappe.get_value("Department",filters={"department_head":user})
     
-    for document in docs:
-        if document["department"] != user_dept:
-            doc = frappe.get_list("Expense Claim", filters={"name":document["name"]}, fields=[
-              'name',
-              'employee',
-              'department',
-              'budget',
-              'expense_date',
-              'description',
-              'expense_lines',
-              'total_amount',
-              'remaining_budget_at_submission',
-              'status',
-              'approved_by'
-            ])
+    for doc in docs:
+        doc["expense_lines"] = frappe.get_list("Expense Line",{"parent":doc.name})
+        if doc["department"] != user_dept:
+            doc.expense_lines.pop("amount")
+    return docs
+
 
 @frappe.whitelist()
 def get_budget_status(budget_name):
@@ -61,7 +49,7 @@ def get_budget_status(budget_name):
     if is_budget_available or "SG Staff" in roles:
         frappe.local.response["http_status_code"] = 404
         return {
-          'error': 'Not found'
+            'error': 'Not found'
         }
 
     allocated = frappe.get_value("Budget", doc, "total_allocated")
@@ -79,7 +67,26 @@ def get_budget_status(budget_name):
         "utilization_percent":utilization_percent
     }
 
+#check
 @frappe.whitelist()
-def change_depart(department_name, document_name):
-    doc = frappe.set_value("Department", document_name, "department_name", department_name)
-    frappe.commit()
+def filter_budgets(filters = None):
+    datetime = datetime()
+    date = datetime.strptime(today(),"%Y-%m-%d")
+    values = {"department_name":filters.department, "fiscal_quarter":date.month}
+        
+    data = frappe.db.sql("""
+    SELECT * from 
+    FROM `tabExpense Claim` EC
+    JOIN `tabBudget` B
+    ON EC.budget = B.name
+    WHERE EC.department = %(from_department)s and B.fiscal_quarter = %(fiscal_quarter)s
+    """,values=values, as_dict=True)
+
+    return data
+
+@frappe.whitelist()
+def change_department(department_name, document_name):
+    frappe.set_value("Department", document_name, "department_name", department_name)
+    return {
+        "department_name":department_name
+    }

@@ -1,36 +1,37 @@
 // Copyright (c) 2026, SD and contributors
 // For license information, please see license.txt
 
-//in hold
 frappe.ui.form.on("Expense Claim", {
-    setup(frm){
-        frm.set_query("Budget", ()=>{
-            return{
-                filters:{
-                    department:frm.doc.department,
-                }
-            }
-        });
-    },
+    // setup(frm){
+    //     frm.set_query("budget", ()=>{
+    //         return{
+    //             query:"spendgate.api.filter_budgets",
+    //             filters:{
+    //                 department:frm.doc.department,
+    //             }
+    //         }
+    //     });
+    // },
 
 	refresh(frm) {
-        frm.dashboard.add_indicator("Status","gray", {"status":"Draft"});
-        frm.dashboard.add_indicator("Status","orange", {"status":"Pending Approval"});
-        frm.dashboard.add_indicator("Status", "green", {"status":"Approved"});
-        frm.dashboard.add_indicator("Status","red", {"status":"Rejected"});
-        frm.dashboard.add_indicator("Status","blue", {"status":"Reimbursed"});
-        frm.dashboard.add_indicator("Status","red", {"status":"Cancelled"});
+        let colors = {
+            "Draft":"gray",
+            "Pending Approval":"orange",
+            "Approved":"green",
+            "Rejected":"red",
+            "Reimbursed":"blue",
+            "Cancelled":"red"
+        }
+        frm.dashboard.add_indicator(frm.doc.status, colors[frm.doc.status]);
 
-        let user = frappe.session.user
-        let role = frappe.get_roles(user)
-        if((role.includes("SG Department Head") || role.includes("SG Finance Manager") && frm.doc.status == "Pending Approval")){
+        if((frappe.user.has_role("SG Department Head") || frappe.user.has_role("SG Finance Manager") && frm.doc.status == "Pending Approval")){
             frm.add_custom_button("Approve", ()=>{
                 frm.doc.status = "Approved"
             });
         }
 
         frm.add_custom_button("Reject Claim",()=>{
-            let dialog = new frappe.ui.dialog({
+            let dialog = new frappe.ui.Dialog({
                 fields:[
                     {
                         label:"Rejection reason",
@@ -46,33 +47,46 @@ frappe.ui.form.on("Expense Claim", {
             });
             dialog.show();
         });
+
         frm.add_custom_button("Reassign Department", ()=>{
-            frppe.prompt({
+            frappe.prompt({
                 label:"Department Name",
                 fieldname:"department_name",
-                fieldtype:"data"
-            },(values)=>{
-                
+                fieldtype:"Link",
+                options:"Department"
+            },(values)=>{ 
                 frappe.confirm("Are you sure you want to submit?", 
-                    (values)=>{
-                            frappe.call("spendgate.api.change_department",
-                                {
-                                    department_name:values.department_name,
-                                    document_name:frm.doc.name
-                                }
-                            )
-                        },
+                    ()=>{   
+                        frappe.call({
+                            method: "spendgate.api.change_department",
+                            args: {
+                                department_name:values.department_name,
+                                document_name:frm.doc.name
+                            },
+                            callback: (r)=>{
+                                frm.trigger("department_name")
+                            }
+                        })
+                    },
                     ()=>{
-
+                        //cancell process
+                        frappe.msgprint("Process Cancelled")
                     });
+
             });
+            "Reassign Department",
+            "Reassign"
         });
 	},
 });
 
 frappe.ui.form.on("Expense Line",{
     amount(frm, cdt, cdn){
-        // frappe.model.set_value()
+
+        let total_budget = 0;
+        frm.doc.item_lines.forEach((row)=>{
+            total_budget += row.amount;
+        });
 
         let row = frappe.get_doc(cdt, cdn);
 
