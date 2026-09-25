@@ -1,16 +1,16 @@
 # B2c — Dangerous Patterns
 ## The snippet below has two bugs. One is generic (you've seen its shape before). The other is specific to this app and explains exactly why SpendGate computes spend with a live aggregate query instead of a running balance field. Identify both and write the corrected version in README_internals.md
-`def validate(self):
+```def validate(self):
     self.total_amount = sum(r.amount for r in self.expense_lines)
     self.save()
     budget = frappe.get_doc("Budget", self.budget)
     budget.total_allocated -= self.total_amount
-    budget.save()
+    budget.save()```
 
 ### `ANSWER`: 
 #### self.save() saves the document during validation.
 #### budget will be subtracted everytime again and again
-def validate(self):
+```def validate(self):
     self.total_amount = sum(r.amount for r in self.expense_lines)
     spent_so_far = frappe.db.sql("""
 			SELECT COALESCE(SUM(total_amount), 0) FROM `tabExpense Claim`
@@ -19,7 +19,7 @@ def validate(self):
     budget = frappe.get_doc("Budget", self.budget)
     budget.total_allocated -= self.total_amount
     budget.total_allocated -= spent_so_far
-    budget.save()
+    budget.save()```
 
 ---
 
@@ -54,9 +54,9 @@ def validate(self):
 # E3 — One Performance Judgment Call frappe.db.get_value vs get_doc
 ## Somewhere in your controller you need just the low_budget_alert_threshold_percent value from SpendGate Settings. Which pattern would you use and why?
 
-### doc = frappe.get_doc("SpendGate Settings", "SpendGate Settings")
-### threshold = doc.low_budget_alert_threshold_percent
-### threshold = frappe.db.get_value("SpendGate Settings", None, "low_budget_alert_threshold_percent")
+```doc = frappe.get_doc("SpendGate Settings", "SpendGate Settings")
+threshold = doc.low_budget_alert_threshold_percent
+threshold = frappe.db.get_value("SpendGate Settings", None, "low_budget_alert_threshold_percent")```
 
 ### `ANSWER`: I would use `frappe.db.get_value` because we just need the value from the settings and we are not going to modify the value as per the question, if we use `get_doc` it will get the entire document object which increase the server load.
 
@@ -65,7 +65,7 @@ def validate(self):
 # H1 — Expense Claim Form Script
 ## In README_internals.md: why does a frappe.call inside the validate client event not work, and why must async fetches happen in onload/refresh instead?
 
-### `ANSWER`:
+### `ANSWER`: 
 
 ---
 
@@ -97,18 +97,12 @@ def validate(self):
 # K2 — Spot the N+1
 ## The snippet below has an N+1 query problem. Identify it and rewrite it:
 ## N+1 PROBLEM - fix this
-claims = frappe.get_all("Expense Claim", fields=["name","department"])
+```claims = frappe.get_all("Expense Claim", fields=["name","department"])
 for c in claims:
     dept = frappe.get_doc("Department", c.department)
-    print(dept.department_name, dept.department_head)
+    print(dept.department_name, dept.department_head)```
 
 ### `ANSWER`:
-claims = frappe.get_all("Expense Claim", fields=["name","department"])
-
-for claim in claims:
-    claim["department_head"]=frappe.get_value("Department",claim.department,"department_head")
-
-- `N+1 problem occurs when a query runs for n times along with the get_all it becomes n+1 where it can be solved by removing ` 
 
 ---
 
@@ -121,10 +115,10 @@ for claim in claims:
 ## curl http://127.0.0.1:8000/api/resource/Expense%20Claim -H "Authorization": token 0c29be0010dbaa9:3c007325edcc55d
 
 ### Response:
-{
+```{
   "data": [
     {
       "name": "EXP-2026-00001"
     }
   ]
-}
+}```
