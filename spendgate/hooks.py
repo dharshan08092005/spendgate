@@ -174,23 +174,15 @@ doc_events = {
 
 # Scheduled Tasks
 # ---------------
-
+# "cron":{
+#         " * * *": [
+#             "spendgate.tasks.check_budget_thresholds"
+#         ]
+#     },
 scheduler_events = {
-# 	"all": [
-# 		"spendgate.tasks.all"
-# 	],
-	"daily": [
-		"spendgate.tasks.check_budget_thresholds"
-	],
-# 	"hourly": [
-# 		"spendgate.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"spendgate.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"spendgate.tasks.monthly"
-# 	],
+    "daily":[
+        "spendgate.tasks.check_budget_thresholds"
+    ]
 }
 
 # Testing

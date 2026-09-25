@@ -90,11 +90,41 @@ def validate(self):
 # J1 — Expense Claim Voucher
 ## In README_internals.md: explain the difference between putting a frappe.get_all() call directly inside the Jinja template versus pre-computing in before_print() and referencing doc.precomputed_field.
 
+### `ANSWER`: Putting directly in Jinja template will store the values in cache when the HTML page is rendered. But if we calculate and send as doc.precomputed_field the correct value is calculated every time.
+
+---
+
+# K2 — Spot the N+1
+## The snippet below has an N+1 query problem. Identify it and rewrite it:
+## N+1 PROBLEM - fix this
+claims = frappe.get_all("Expense Claim", fields=["name","department"])
+for c in claims:
+    dept = frappe.get_doc("Department", c.department)
+    print(dept.department_name, dept.department_head)
+
 ### `ANSWER`:
+claims = frappe.get_all("Expense Claim", fields=["name","department"])
+
+for claim in claims:
+    claim["department_head"]=frappe.get_value("Department",claim.department,"department_head")
+
+- `N+1 problem occurs when a query runs for n times along with the get_all it becomes n+1 where it can be solved by removing ` 
 
 ---
 
 # N1 — ignore_permissions Audit & JS-Hiding Pitfall
 ## Explain in README_internals.md why hiding a field in JavaScript is not a security measure.
 
-### `ANSWER`:
+### `ANSWER`: Hiding a field in JS is not a security measure because JS runs in User's browser, so it become acessible.
+
+# L1 — Custom Whitelisted Method
+## curl http://127.0.0.1:8000/api/resource/Expense%20Claim -H "Authorization": token 0c29be0010dbaa9:3c007325edcc55d
+
+### Response:
+{
+  "data": [
+    {
+      "name": "EXP-2026-00001"
+    }
+  ]
+}

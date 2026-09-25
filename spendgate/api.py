@@ -1,7 +1,6 @@
 import frappe
 from frappe.query_builder import DocType
-from frappe.utils import today
-from frappe.utils import datetime
+from frappe.utils import today,getdate
 
 @frappe.whitelist()
 def get_claims_pending_approval():
@@ -26,7 +25,9 @@ def expose_expense_claim():
 
 @frappe.whitelist()
 def expose_safe_expense_claim():
-    docs = frappe.get_list("Expense Claim", fields=['*'], ignore_permissions=True)
+    docs = frappe.get_list("Expense Claim", fields=[
+        '*'
+    ], ignore_permissions=True)
     
     user = frappe.session.user
     roles = frappe.get_roles(user)
@@ -41,12 +42,12 @@ def expose_safe_expense_claim():
 
 @frappe.whitelist()
 def get_budget_status(budget_name):
-    doc = frappe.form_dict(budget_name)
+    doc = frappe.form_dict.get("budget_name")
 
     roles = frappe.get_roles(frappe.session.user)
     is_budget_available = frappe.db.exists("Budget", doc)
 
-    if is_budget_available or "SG Staff" in roles:
+    if not is_budget_available or ("Administrator" not in roles and "SG Staff" in roles):
         frappe.local.response["http_status_code"] = 404
         return {
             'error': 'Not found'
@@ -69,18 +70,13 @@ def get_budget_status(budget_name):
 
 #check
 @frappe.whitelist()
-def filter_budgets(filters = None):
-    datetime = datetime()
-    date = datetime.strptime(today(),"%Y-%m-%d")
-    values = {"department_name":filters.department, "fiscal_quarter":date.month}
+def filter_budgets(doctype, txt, searchfield, start, page_len, filters):
+    
+    month = "Q" + str(((getdate(today()).month - 1 ) // 3) + 1)
         
     data = frappe.db.sql("""
-    SELECT * from 
-    FROM `tabExpense Claim` EC
-    JOIN `tabBudget` B
-    ON EC.budget = B.name
-    WHERE EC.department = %(from_department)s and B.fiscal_quarter = %(fiscal_quarter)s
-    """,values=values, as_dict=True)
+    SELECT * FROM `tabExpense Claim` EC JOIN `tabBudget` B ON EC.budget = B.name WHERE EC.department = %s and B.fiscal_quarter = %s AND B.name LIKE %s
+    """,(filters.get("department"),month,f"%{txt}%"), as_dict=True)
 
     return data
 

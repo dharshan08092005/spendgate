@@ -28,7 +28,7 @@ def after_install():
             doc.category_name = expense_category
             doc.insert(ignore_permissions = True)
 
-    if not frappe.db.exists("Spendgate Settings", "voicepython1@gmail.com"):
+    if not frappe.db.exists("Spendgate Settings", "finance_email"):
         doc = frappe.get_single("Spendgate Settings")
         doc.finance_email="voicepython1@gmail.com"
         doc.low_budget_alert_threshold_percent=90

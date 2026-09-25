@@ -7,7 +7,7 @@ def get_permission_query_conditions(user = None):
 
     roles = frappe.get_roles(user)
 
-    if user == "Administrator":
+    if user == "Administrator" or "SG Finance Manager" in roles:
         return ""
 
     if "SG Staff" in roles:
@@ -15,5 +15,5 @@ def get_permission_query_conditions(user = None):
 
 
     if "SG Department Head" in roles:
-        user_dept = frappe.get_value("Department",filters={"department_head":user})
+        user_dept = frappe.get_value("Department",{"department_head":user},"name")
         return f"`tabExpense Claim`.department = {frappe.db.escape(user_dept)}"
