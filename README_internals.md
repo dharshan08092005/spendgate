@@ -1,3 +1,6 @@
+
+## `video link` : `https://drive.google.com/file/d/14MYNzJQZQDgzCwefibbOXT3gyYFaqMmK/view?usp=sharing`
+
 # B2c — Dangerous Patterns
 ## The snippet below has two bugs. One is generic (you've seen its shape before). The other is specific to this app and explains exactly why SpendGate computes spend with a live aggregate query instead of a running balance field. Identify both and write the corrected version in README_internals.md
 ```def validate(self):
