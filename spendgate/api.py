@@ -68,15 +68,27 @@ def get_budget_status(budget_name):
         "utilization_percent":utilization_percent
     }
 
-#check
 @frappe.whitelist()
 def filter_budgets(doctype, txt, searchfield, start, page_len, filters):
-    
+    filters = frappe.parse_json(filters)
+
+    filters = filters or {}
+
     month = "Q" + str(((getdate(today()).month - 1 ) // 3) + 1)
-        
+
+    department = filters.get("department")
+    if not department:
+        return []
+    
     data = frappe.db.sql("""
-    SELECT * FROM `tabExpense Claim` EC JOIN `tabBudget` B ON EC.budget = B.name WHERE EC.department = %s and B.fiscal_quarter = %s AND B.name LIKE %s
-    """,(filters.get("department"),month,f"%{txt}%"), as_dict=True)
+    SELECT B.name FROM `tabBudget` B WHERE B.department = %(department)s AND B.fiscal_quarter = %(quarter)s AND B.name LIKE %(txt)s ORDER BY B.name LIMIT %(start)s, %(page_len)s
+    """,{
+        "department":department, 
+        "quarter":month, 
+        "txt":f"%{txt}%",
+        "start":int(start),
+        "page_len":int(page_len)
+        })
 
     return data
 
